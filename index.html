@@ -3,12 +3,196 @@
 
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width">
-	<title>Chicago City-Owned Land Inventory</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="icons/icon-192x192.png" type="image/x-icon" />
+  <!-- <link rel="manifest" href="manifest.json"> -->
+	<title>IT202 Project 1: Chicago City-Owned Land Inventory</title>
+	
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
 	<link href="styles.css" rel="stylesheet" type="text/css" />
+  
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTNTN8EvimWfGlpJD8igJYdwtuE8w75NU&callback=initMap&libraries=&v=weekly" ></script>
 </head>
 
 <body>
+	<div class="jumbotron text-center">
+		<h1>
+			Chicago City-Owned Land Inventory
+		</h1>
+    <p>
+      IT202 Spring 2021 Project 1 - Ajitesh Bansal
+    </p>
+	</div>
+
+
+	<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+		<a class="navbar-brand" href="#">Home</a>
+		<button class="navbar-toggler" type="button" data-target="#collapsibleNavbar" data-toggle="collapse">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="collapsibleNavbar">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="#">Filter</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">View Data</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Locations</a>
+        </li>   
+        <li class="nav-item">
+          <a class="nav-link" href="#">About Us</a>
+        </li>    
+      </ul>
+    </div>  
+  </nav>
+
+
+  <div id="msg"> 
+  </div>
+
+  <div class="container" id="main">
+    
+      <div id="home"> 
+        <h3>
+          Instructions
+        </h3>
+        <p>
+          This single page progressive web application is used to filter and search data from the Chicago City-Owned Land Inventory Data using <a href="https://dev.socrata.com/foundry/data.cityofchicago.org/aksk-kvfp">this public API</a> and then view all queried locations on a large scale map. 
+        </p>
+        <i>Note: This application is also installable as a PWA.</i>
+      </div>
+      
+      <div id="filter-form">
+        <form>
+          <select name="department" id="department">
+            <option></option>
+          </select>
+          
+          <input type="radio" name="salary_or_hourly" value="Hourly"> Hourly
+          <input type="radio" name="salary_or_hourly" value="Salary"> Salary
+        </form>
+
+        <button id="filter" onclick="handleFilter">Filter</button>
+
+      </div>
+
+      <div id="data"> 
+
+      </div>
+
+      <div id="map"> 
+
+      </div>
+
+      <div id="about"> 
+        <h3>
+          About Us
+        </h3>
+        <p>
+          This single page web application was built by Ajitesh Bansal (abansa22) for the first course project of IT 202 - Web and Multimedia. It was built using the following tools/frameworks:
+          <ul>
+            <li>
+              HTML (Forms and DOM manipulation)
+            </li>
+            <li>
+              CSS
+            </li>
+            <li>
+              JavaScript
+            </li>
+            <li>
+              Bootstrap
+            </li>
+            <li>
+              Google Maps API
+            </li> 
+          </ul>
+        </p>
+      </div>
+  </div>
+
+
+
+  <div class="jumbotron text-center" style="margin-bottom:0">
+    <p>IT202 Spring 2021 Project 1 - Ajitesh Bansal (abansa22)</p>
+	  <a href="https://docs.google.com/document/d/1U057Z4E66fCe3J8PfHV9sQezPBZgWQa1MIypGp-ynsQ/edit">Project 1 Document Link</a>
+  </div>
+
+  <script>
+    let map;
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 41.86980309859628, lng: -87.64944472365393 },
+        zoom: 8,
+      });
+    }
+  </script>
+
+  <script>
+    const endpoint = "https://data.cityofchicago.org/resource/xzkq-xp2w.json";
+    // get the unique department names and populate the select control
+    fetch(endpoint+"?$select=distinct%20department")
+      .then (response => response.json())
+      .then (result => {
+          // if sorting by a string value, need a more complex sort function
+          result.sort((a, b) => {
+            if (a === b) {
+              return 0;
+            }
+            return a.department < b.department ? -1 : 1;
+          });
+
+          for (let dept of result) {
+            let opt = document.createElement("option");
+            opt.innerText = dept.department;
+            document.querySelector("#department").append(opt);
+          }
+      });
+
+     document.querySelector("#filter").addEventListener ("click", (e) => {
+
+          document.querySelector("#data").innerText = "fetching results";
+
+          let f = document.querySelector("form");
+          let fd = new FormData(f);
+          let sp = new URLSearchParams(fd);
+
+          let url = endpoint +  "?" + sp.toString();
+
+          fetch (url)
+            .then ( (response) => { return response.json() })
+            .then ( (data) => {
+                document.querySelector("#data").innerText = "Results found: " + data.length;  
+                for (let item of data) {
+                    // create a paragraph
+                    let p = document.createElement ("p");
+                    p.innerText = item["name"] + ": " + item["job_titles"];
+                    document.querySelector("#data").append(p);
+                }
+            });
+      });
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').then(function(registration) {
+          // Registration was successful
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        }, function(err) {
+          // registration failed :(
+          console.log('ServiceWorker registration failed: ', err);
+        });
+      });
+    }
+  </script>
 </body>
 
 </html>
