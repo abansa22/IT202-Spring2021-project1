@@ -101,6 +101,21 @@
           </div>
 
           <div class="form-group">
+            <label for="sq_ft">Minimum Sq. Ft</label>
+            <input type="text" class="form-control" name="sq_ft" id="sq_ft">
+          </div>
+
+          <div class="form-group">
+            <label for="date_of_acquisition">Date of Acquisition</label>
+            <input type="date" class="form-control" name="date_of_acquisition" id="date_of_acquisition">
+          </div>
+
+          <div class="form-group">
+            <label for="date_of_disposition">Date of Disposition</label>
+            <input type="date" class="form-control" name="date_of_disposition" id="date_of_disposition">
+          </div>
+
+          <div class="form-group">
             <label for="ward">Ward Number</label>
             <input type="text" class="form-control" name="ward" id="ward">
           </div>
@@ -115,10 +130,7 @@
             <input type="text" class="form-control" name="zip_code" id="zip_code">
           </div>
 
-          <div class="form-group">
-            <label for="sq_ft">Minimum Sq. Ft</label>
-            <input type="text" class="form-control" name="sq_ft" id="sq_ft">
-          </div>
+          
         </form>
         <br/>
 
@@ -128,6 +140,16 @@
 
       <div id="view" class="tab-pane fade">
         <div id="data">
+          <div class="row">
+            <div class="card" >
+              <div class="card-body">
+                <h5 class="card-title">Card title</h5>
+                <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
+                <p class="card-text">Card text</p>
+                <div "card-extra">Card extra</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -167,28 +189,73 @@
   </div>
 
   <script>
-    let dataList = []
     const endpoint = "https://data.cityofchicago.org/resource/aksk-kvfp.json";
     
+    // callback function
+    function initMap(dataList) { // JS API is loaded and available
+      const map = new google.maps.Map(document.getElementById("map"), {
+        // centered on Chicago
+        center: { lat: 41.86980309859628, lng: -87.64944472365393 },
+        zoom: 8,
+      });
+
+      const infowindow = new google.maps.InfoWindow({
+        content: contentString = '<div id="content">' +
+        '<h1 id="firstHeading" class="firstHeading">Heading</h1>' +
+        '<div id="bodyContent">' +
+        '<p>Text</p>' +
+        '<a href="">Link</a>' +
+        '<p>Date</p>' +
+        '</div>' +
+        '</div>'
+      });
+
+      const marker = new google.maps.Marker({
+        position: { lat: 41.86980309859628, lng: -87.64944472365393 },
+        map: map,
+        title: "Name",
+      });
+
+      marker.addListener("click", () => {
+        infowindow.open(map, marker);
+      });
+    };
+
     function updateData(url) {
+      const card = document.querySelector(".card");
+
       fetch(url)
-        .then ( (response) => { return response.json() })
-        .then ( (data) => {
-            document.querySelector("#data").innerHTML = "";
-            dataList = data;
-            console.log(dataList);
+      .then(response => response.json())
+      .then(data => {
+        console.log("Results found: " + data.length);
+        document.querySelector("#status").innerText = "Results found: " + data.length;  
+        setTimeout(() => document.querySelector("#status").style.display = "none", 10000);
 
-            document.querySelector("#status").innerText = "Results found: " + data.length;  
+        data.forEach(row => {
+          const {id, pin, address, managing_organization, property_status, date_of_acquisition, date_of_disposition, sq_ft, ward, community_area_number, community_area_name, zoning_classification, zip_code, last_update, x_coordinate, y_coordinate, latitude, longitude, location} = row;
 
-            setTimeout(() => document.querySelector("#status").style.display = "none", 5000);
-
-            for (let item of data) {
-                // create a paragraph
-                let p = document.createElement ("p");
-                p.innerText = JSON.stringify(item);
-                document.querySelector("#data").append(p);
-            }
+          let cardClone = card.cloneNode(true);
+          let cardBody = cardClone.childNodes[1];
+          let [, cardTitle,, cardSubtitle,, cardText,, cardExtra,] = cardBody.childNodes;
+          cardTitle.innerText = id;
+          cardSubtitle.innerText = row.pin ? row.pin : '';
+          cardText.innerText=`
+          Managing Organization: ${managing_organization},
+          Property Status: ${property_status},
+          Last Updated: ${last_update}
+          `; // compulsory keys
+          //optional keys
+          if (row.sq_ft) {
+            cardText.innerText += `, Sq Ft: ${row.sq_ft}`
+          }
+          if (row.zip_code) {
+            cardText.innerText += `, Zip Code: ${row.zip_code}`
+          }
+          cardExtra.innerText = row.location ? `lat:${location.latitude}, lng:${location.longitude}`: '';
+          document.querySelector(".row").appendChild(cardClone);
         });
+        card.style.display = 'none'; // hide template card
+      });
     }
 
     function fetchAddOptions(key) {
@@ -260,38 +327,6 @@
       });
     }
   </script>
-  
-  <script>
-    // callback function
-    function initMap() { // JS API is loaded and available
-      const map = new google.maps.Map(document.getElementById("map"), {
-        // centered on Chicago
-        center: { lat: 41.86980309859628, lng: -87.64944472365393 },
-        zoom: 8,
-      });
-
-      const infowindow = new google.maps.InfoWindow({
-        content: contentString = '<div id="content">' +
-        '<h1 id="firstHeading" class="firstHeading">Heading</h1>' +
-        '<div id="bodyContent">' +
-        '<p>Text</p>' +
-        '<a href="">Link</a>' +
-        '<p>Date</p>' +
-        '</div>' +
-        '</div>'
-      });
-
-      const marker = new google.maps.Marker({
-        position: { lat: 41.86980309859628, lng: -87.64944472365393 },
-        map: map,
-        title: "Name",
-      });
-
-      marker.addListener("click", () => {
-        infowindow.open(map, marker);
-      });
-    };
-	</script>
 
   <script
       src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTNTN8EvimWfGlpJD8igJYdwtuE8w75NU&callback=initMap&libraries=&v=weekly"
