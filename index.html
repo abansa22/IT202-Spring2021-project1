@@ -234,20 +234,22 @@
         zoom: 10,
       });
 
-      for (land of landList) {
-        const infowindow = new google.maps.InfoWindow({
-          content: contentString = land.contextString
-        });
+      if (landList) {
+        for (land of landList) {
+          const infowindow = new google.maps.InfoWindow({
+            content: contentString = land.contextString
+          });
 
-        const marker = new google.maps.Marker({
-          position: land.position,
-          map: map,
-          title: land.title,
-        });
+          const marker = new google.maps.Marker({
+            position: land.position,
+            map: map,
+            title: land.title,
+          });
 
-        marker.addListener("click", () => {
-          infowindow.open(map, marker);
-        });
+          marker.addListener("click", () => {
+            infowindow.open(map, marker);
+          });
+        }
       }
     };
 
