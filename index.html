@@ -55,10 +55,6 @@
         <button type="button" class="close" data-dismiss="alert">&times;</button>
       </div>
       
-      <!-- <div class="d-flex justify-content-center">
-        <div class="spinner-border" role="status">
-        </div>
-      </div> -->
       <div id="home" class="tab-pane fade in active show"> 
         <div class="jumbotron text-center">
           <h1>
@@ -139,17 +135,25 @@
       </div>
 
       <div id="view" class="tab-pane fade">
-        <div id="data">
-          <div class="row">
-            <div class="card" >
-              <div class="card-body">
-                <h5 class="card-title">Card title</h5>
-                <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
-                <p class="card-text">Card text</p>
-                <div "card-extra">Card extra</div>
-              </div>
+        <!-- template card so it does not get removed -->
+        <div class="card" >
+          <div class="card-body">
+            <h5 class="card-title">Card title</h5>
+            <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
+            <p class="card-text">Card text</p>
+            <div class="card-extra">Card extra</div>
+          </div>
+        </div>
+
+        <div id="loading">
+          <div class="d-flex justify-content-center">
+            <div class="spinner-border" role="status">
             </div>
           </div>
+        </div>
+
+        <div id="data">
+    
         </div>
       </div>
 
@@ -192,45 +196,48 @@
     const endpoint = "https://data.cityofchicago.org/resource/aksk-kvfp.json";
     
     // callback function
-    function initMap(dataList) { // JS API is loaded and available
+    function initMap(landList) { // JS API is loaded and available
       const map = new google.maps.Map(document.getElementById("map"), {
         // centered on Chicago
         center: { lat: 41.86980309859628, lng: -87.64944472365393 },
-        zoom: 8,
+        zoom: 10,
       });
 
-      const infowindow = new google.maps.InfoWindow({
-        content: contentString = '<div id="content">' +
-        '<h1 id="firstHeading" class="firstHeading">Heading</h1>' +
-        '<div id="bodyContent">' +
-        '<p>Text</p>' +
-        '<a href="">Link</a>' +
-        '<p>Date</p>' +
-        '</div>' +
-        '</div>'
-      });
+      for (land of landList) {
+        const infowindow = new google.maps.InfoWindow({
+          content: contentString = land.contextString
+        });
 
-      const marker = new google.maps.Marker({
-        position: { lat: 41.86980309859628, lng: -87.64944472365393 },
-        map: map,
-        title: "Name",
-      });
+        const marker = new google.maps.Marker({
+          position: land.position,
+          map: map,
+          title: land.title,
+        });
 
-      marker.addListener("click", () => {
-        infowindow.open(map, marker);
-      });
+        marker.addListener("click", () => {
+          infowindow.open(map, marker);
+        });
+      }
     };
 
     function updateData(url) {
       const card = document.querySelector(".card");
+      const loading = document.querySelector("#loading");
+      const dataView = document.querySelector("#data");
+      const status = document.querySelector("#status");
 
       fetch(url)
       .then(response => response.json())
       .then(data => {
+        card.style.display = 'block'; 
+        loading.style.display = 'block';
+        dataView.innerHTML = "";
+        console.log(card);
         console.log("Results found: " + data.length);
-        document.querySelector("#status").innerText = "Results found: " + data.length;  
-        setTimeout(() => document.querySelector("#status").style.display = "none", 10000);
+        status.innerText = "Results found: " + data.length;  
+        setTimeout(() => status.style.display = "none", 10000);
 
+        let locatedLandList = [] // for the lands with lat long only from filtered results
         data.forEach(row => {
           const {id, pin, address, managing_organization, property_status, date_of_acquisition, date_of_disposition, sq_ft, ward, community_area_number, community_area_name, zoning_classification, zip_code, last_update, x_coordinate, y_coordinate, latitude, longitude, location} = row;
 
@@ -239,22 +246,76 @@
           let [, cardTitle,, cardSubtitle,, cardText,, cardExtra,] = cardBody.childNodes;
           cardTitle.innerText = id;
           cardSubtitle.innerText = row.pin ? row.pin : '';
-          cardText.innerText=`
-          Managing Organization: ${managing_organization},
-          Property Status: ${property_status},
+          
+          let cardDetails = `
+          Managing Organization: ${managing_organization ? managing_organization : ''},
+          Property Status: ${property_status ? property_status : ''},
           Last Updated: ${last_update}
+
+          `;
+          let contextString =`
+          <h5>ID:${id}, PIN${pin}</h5>
+          <h6>
+          <b>Managing Organization:</b> ${managing_organization ? managing_organization : ''},
+          <b>Property Status:</b> ${property_status ? property_status : ''},
+          <b>Last Updated:</b> ${last_update}
+          </h6>
           `; // compulsory keys
           //optional keys
+          if (row.community_area_name) {
+            contextString += `<b>Community Area Name:</b> ${community_area_name}`;
+            cardDetails += `Community Area Name: ${community_area_name}`;
+          }
+          if (row.community_area_number) {
+            contextString += `, <b>Community Area Number:</b> ${community_area_number}`;
+            cardDetails += `, Community Area Number: ${community_area_number}`;
+          }
           if (row.sq_ft) {
-            cardText.innerText += `, Sq Ft: ${row.sq_ft}`
+            contextString += `, <b>Sq Ft:</b> ${sq_ft}`;
+            cardDetails += `, Sq Ft: ${sq_ft}`;
           }
           if (row.zip_code) {
-            cardText.innerText += `, Zip Code: ${row.zip_code}`
+            contextString += `, <b>Zip Code:</b> ${zip_code}`;
+            cardDetails += `, Zip Code:${zip_code}`;
           }
-          cardExtra.innerText = row.location ? `lat:${location.latitude}, lng:${location.longitude}`: '';
-          document.querySelector(".row").appendChild(cardClone);
+          if (row.zoning_classification) {
+            contextString += `, <b>Zoning Classification:</b> ${zoning_classification}`;
+            cardDetails += `, Zoning Classification: ${zoning_classification}`;
+          }
+          if (row.x_coordinate) {
+            contextString += `, <b>X:</b> ${x_coordinate}`;
+            cardDetails += `, X: ${x_coordinate}`;
+          }
+          if (row.y_coordinate) {
+            contextString += `, <b>Y:</b> ${y_coordinate}`;
+            cardDetails += `, Y: ${y_coordinate}`;
+          }
+           if (row.date_of_acquisition) {
+            contextString += `, <b>Date of Acquisition:</b> ${date_of_acquisition}`;
+            cardDetails += `, Date of Acquisition: ${date_of_acquisition}`;
+          }
+          if (row.date_of_disposition) {
+            contextString += `, <b>Date of Disposition:</b> ${date_of_disposition}`;
+            cardDetails += `, Date of Disposition: ${date_of_disposition}`;
+          }
+          cardExtra.innerText = row.location ? `Lat: ${location.latitude}, Lng: ${location.longitude}`: '';
+
+          cardText.innerText = cardDetails;
+
+          // console.log(dataView);
+          dataView.appendChild(cardClone);
+
+          if (row.location) { // make a map out of it as well
+            locatedLandList.push({
+              position: {'lat': parseFloat(location.latitude), 'lng': parseFloat(location.longitude)},
+              title: `ID ${id}`,
+              contextString: contextString
+            })
+          }
         });
+        initMap(locatedLandList);
         card.style.display = 'none'; // hide template card
+        setTimeout(() => loading.style.display = 'none', 1500);
       });
     }
 

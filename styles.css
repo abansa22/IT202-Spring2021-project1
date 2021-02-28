@@ -15,6 +15,9 @@
   margin-left: 5%;
 }
 
+.card-extra {
+  color: #7A7;
+}
 
 .nav-link.active {
   background-color: #111 !important;
