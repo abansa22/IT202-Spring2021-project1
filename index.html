@@ -20,17 +20,6 @@
 	</script>
 	<script src="https://polyfill.io/v3/polyfill.min.js?features=default">
 	</script>
-	<script>
-		let map;
-
-    function initMap() {
-      map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 41.86980309859628, lng: -87.64944472365393 },
-        zoom: 8,
-      });
-      console.log(map)
-    }
-	</script>
 </head>
 
 <body>
@@ -146,11 +135,11 @@
       </div>
   </div>
 
-
-
   <div class="jumbotron text-center" style="margin-bottom:0">
-    <p>IT202 Spring 2021 Project 1 - Ajitesh Bansal (abansa22)</p>
-	  <a href="https://docs.google.com/document/d/1U057Z4E66fCe3J8PfHV9sQezPBZgWQa1MIypGp-ynsQ/edit">Project 1 Document Link</a>
+    <p>IT202 Spring 2021 Project 1 - Ajitesh Bansal (abansa22)
+    <br>
+    <a href="https://docs.google.com/document/d/1U057Z4E66fCe3J8PfHV9sQezPBZgWQa1MIypGp-ynsQ/edit">Project 1 Document Link</a>
+    </p>
   </div>
 
   <script>
@@ -188,6 +177,9 @@
           .then ( (response) => { return response.json() })
           .then ( (data) => {
               document.querySelector("#status").innerText = "Results found: " + data.length;  
+
+              setTimeout(() => document.querySelector("#status").style.display = "none", 3000);
+
               for (let item of data) {
                   // create a paragraph
                   let p = document.createElement ("p");
@@ -201,21 +193,51 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('sw.js').then(function(registration) {
-          // Registration was successful
+        navigator.serviceWorker.register('sw.js').then(function(registration) { // success
           console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        }, function(err) {
-          // registration failed :(
+        }, function(err) { // fail
           console.log('ServiceWorker registration failed: ', err);
         });
       });
     }
   </script>
+  
+  <script>
+    // callback function
+    function initMap() { // JS API is loaded and available
+      const map = new google.maps.Map(document.getElementById("map"), {
+        // centered on Chicago
+        center: { lat: 41.86980309859628, lng: -87.64944472365393 },
+        zoom: 8,
+      });
+
+      const infowindow = new google.maps.InfoWindow({
+        content: contentString = '<div id="content">' +
+        '<h1 id="firstHeading" class="firstHeading">Heading</h1>' +
+        '<div id="bodyContent">' +
+        '<p>Text</p>' +
+        '<a href="">Link</a>' +
+        '<p>Date</p>' +
+        '</div>' +
+        '</div>'
+      });
+
+      const marker = new google.maps.Marker({
+        position: { lat: 41.86980309859628, lng: -87.64944472365393 },
+        map: map,
+        title: "Name",
+      });
+      
+      marker.addListener("click", () => {
+        infowindow.open(map, marker);
+      });
+    };
+	</script>
 
   <script
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTNTN8EvimWfGlpJD8igJYdwtuE8w75NU&callback=initMap&libraries=&v=weekly"
-  async
-></script>
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBTNTN8EvimWfGlpJD8igJYdwtuE8w75NU&callback=initMap&libraries=&v=weekly"
+      async
+    ></script>
 </body>
 
 </html>
