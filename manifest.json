@@ -1,6 +1,6 @@
 {
-    "theme_color": "#690505",
-    "background_color": "#690505",
+    "theme_color": "#32528f",
+    "background_color": "#32528f",
     "display": "standalone",
     "scope": "/IT202-Spring2021-project1/",
     "start_url": "/IT202-Spring2021-project1/index.html",
@@ -17,6 +17,6 @@
             "src": "icons/icon-310x310.png",
             "sizes": "310x310",
             "type": "image/png"
-        },
+        }
     ]
 }
